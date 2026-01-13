@@ -3,9 +3,9 @@ import DesignStudio from "./components/DesignStudio";
 
 const App = () => {
   return (
-    <>
+    <div>
       <DesignStudio />
-    </>
+    </div>
   );
 };
 
