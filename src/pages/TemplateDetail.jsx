@@ -18,12 +18,22 @@ const TemplateDetail = () => {
         <h1 className="text-2xl font-semibold text-slate-800">
           {template.name}
         </h1>
-        <button
-          onClick={() => navigate(`/configure/${template.slug}`)}
-          className="px-4 py-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700"
-        >
-          Configure Template
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate(`/configure/${template.slug}`)}
+            className="px-4 py-2 rounded-full bg-slate-800 text-white hover:bg-slate-900"
+          >
+            Configure
+          </button>
+          <button
+            onClick={() =>
+              navigate("/studio/new", { state: { initialData: template.json } })
+            }
+            className="px-4 py-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700"
+          >
+            Open in Studio
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

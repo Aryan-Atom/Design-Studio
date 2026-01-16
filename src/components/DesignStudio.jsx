@@ -21,7 +21,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-const DesignStudio = () => {
+const DesignStudio = ({ initialData }) => {
   const canvasRef = useRef(null);
   const [tool, setTool] = useState("select");
   const [elements, setElements] = useState([]);
@@ -40,6 +40,18 @@ const DesignStudio = () => {
   const [newCommentPos, setNewCommentPos] = useState(null);
   const [activeCommentId, setActiveCommentId] = useState(null);
   const [commentText, setCommentText] = useState("");
+
+  // Load initial elements/comments when provided (e.g., from a template)
+  useEffect(() => {
+    if (initialData && typeof initialData === "object") {
+      if (Array.isArray(initialData.elements)) {
+        setElements(initialData.elements);
+      }
+      if (Array.isArray(initialData.comments)) {
+        setComments(initialData.comments);
+      }
+    }
+  }, [initialData]);
 
   // Helpers for grouping & constraints
   const [lastClickedId, setLastClickedId] = useState(null);

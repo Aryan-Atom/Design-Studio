@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getComponentBySlug } from "../utils/components";
 import TemplatePreview from "../components/TemplatePreview";
@@ -10,15 +10,13 @@ const ConfigComponent = () => {
   const [jsonText, setJsonText] = useState(() =>
     JSON.stringify(base?.json || { elements: [], comments: [] }, null, 2)
   );
-  const [error, setError] = useState(null);
-
-  let parsed = null;
-  try {
-    parsed = JSON.parse(jsonText);
-    setError(null);
-  } catch (e) {
-    if (!error) setError("Invalid JSON");
-  }
+  const { parsed, parseError } = useMemo(() => {
+    try {
+      return { parsed: JSON.parse(jsonText), parseError: null };
+    } catch (e) {
+      return { parsed: null, parseError: "Invalid JSON" };
+    }
+  }, [jsonText]);
 
   const downloadJson = () => {
     try {
@@ -45,10 +43,14 @@ const ConfigComponent = () => {
             Download JSON
           </button>
           <button
-            onClick={() => navigate("/studio/new")}
+            onClick={() =>
+              parsed &&
+              navigate("/studio/new", { state: { initialData: parsed } })
+            }
             className="px-3 py-1.5 rounded-full bg-slate-800 text-white hover:bg-slate-900"
+            disabled={!parsed}
           >
-            Open Studio
+            Open in Studio
           </button>
         </div>
       </div>
@@ -79,7 +81,9 @@ const ConfigComponent = () => {
             onChange={(e) => setJsonText(e.target.value)}
             className="mt-2 w-full h-[420px] font-mono text-xs p-3 border rounded"
           />
-          {error && <div className="mt-2 text-red-600 text-sm">{error}</div>}
+          {parseError && (
+            <div className="mt-2 text-red-600 text-sm">{parseError}</div>
+          )}
         </div>
       </div>
     </div>
