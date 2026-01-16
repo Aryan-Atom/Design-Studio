@@ -861,5 +861,17 @@ export const templates = [
   },
 ];
 
+// Add template meta fields: templateEditLocked and templateImage
+// First template is editable; others are locked by default.
+templates.forEach((t, idx) => {
+  if (typeof t.templateEditLocked === "undefined") {
+    t.templateEditLocked = idx !== 0;
+  }
+  if (typeof t.templateImage === "undefined") {
+    // Default image path based on slug; place images under public/template-images
+    t.templateImage = `/template-images/${t.slug}.png`;
+  }
+});
+
 export const getTemplateBySlug = (slug) =>
   templates.find((t) => t.slug === slug);

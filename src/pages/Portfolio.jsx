@@ -1,14 +1,14 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { templates } from "../utils/templates";
-import TemplatePreview from "../components/TemplatePreview";
+// import TemplatePreview from "../components/TemplatePreview";
 import { PlusCircle } from "lucide-react";
 
 const Portfolio = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="px-6 py-6">
+    <div className="px-6 py-10">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold text-slate-800">Portfolio</h1>
         <button
@@ -24,9 +24,16 @@ const Portfolio = () => {
         {templates.map((t) => (
           <div
             key={t.id}
-            className="bg-white rounded-xl border border-slate-200 shadow-sm p-4"
+            className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 "
           >
-            <TemplatePreview data={t.json} />
+            {/* <TemplatePreview data={t.json} width={570} /> */}
+            <div className="relative border border-slate-200 rounded-lg overflow-hidden bg-white">
+              <img
+                src={t.templateImage}
+                alt={`${t.name} preview`}
+                className="w-full h-64 object-cover"
+              />
+            </div>
             <div className="mt-4">
               <h2 className="text-lg font-medium text-slate-800">{t.name}</h2>
               <p className="text-sm text-slate-600 mt-1">{t.description}</p>
@@ -45,9 +52,15 @@ const Portfolio = () => {
                 </button> */}
                 <button
                   onClick={() =>
+                    !t.templateEditLocked &&
                     navigate("/studio/new", { state: { initialData: t.json } })
                   }
-                  className="px-3 py-1.5 rounded-full bg-indigo-600 text-white hover:bg-indigo-700"
+                  disabled={t.templateEditLocked}
+                  className={`px-3 py-1.5 rounded-full text-white ${
+                    t.templateEditLocked
+                      ? "bg-indigo-400 cursor-not-allowed"
+                      : "bg-indigo-600 hover:bg-indigo-700"
+                  }`}
                 >
                   Open in Studio
                 </button>

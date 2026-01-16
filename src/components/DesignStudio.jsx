@@ -19,6 +19,7 @@ import {
   Unlock,
   ChevronDown,
   ChevronRight,
+  Image as ImageIcon,
 } from "lucide-react";
 
 const DesignStudio = ({ initialData }) => {
@@ -40,6 +41,9 @@ const DesignStudio = ({ initialData }) => {
   const [newCommentPos, setNewCommentPos] = useState(null);
   const [activeCommentId, setActiveCommentId] = useState(null);
   const [commentText, setCommentText] = useState("");
+  // Cache for image assets
+  const imageCacheRef = useRef(new Map());
+  const [assetsVersion, setAssetsVersion] = useState(0);
 
   // Load initial elements/comments when provided (e.g., from a template)
   useEffect(() => {
@@ -101,7 +105,15 @@ const DesignStudio = ({ initialData }) => {
 
   useEffect(() => {
     drawCanvas();
-  }, [elements, selectedIds, zoom, pan, comments, activeCommentId]);
+  }, [
+    elements,
+    selectedIds,
+    zoom,
+    pan,
+    comments,
+    activeCommentId,
+    assetsVersion,
+  ]);
 
   const drawCanvas = () => {
     const canvas = canvasRef.current;
@@ -296,6 +308,31 @@ const DesignStudio = ({ initialData }) => {
         ctx.fillStyle = el.textColor || el.fill || "#000000";
         ctx.textBaseline = "top";
         ctx.fillText(el.text, el.x + (pad.left || 0), el.y + (pad.top || 0));
+        ctx.globalAlpha = 1;
+      } else if (el.type === "image") {
+        ctx.globalAlpha = el.opacity !== undefined ? el.opacity : 1;
+        let img = imageCacheRef.current.get(el.src);
+        if (!img && el.src) {
+          img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            imageCacheRef.current.set(el.src, img);
+            setAssetsVersion((v) => v + 1);
+          };
+          img.onerror = () => {
+            // failed image; skip drawing
+          };
+          img.src = el.src;
+        }
+        if (img && img.complete) {
+          ctx.drawImage(img, el.x, el.y, el.width, el.height);
+        } else {
+          // Placeholder while loading
+          ctx.fillStyle = "#e5e7eb";
+          ctx.fillRect(el.x, el.y, el.width, el.height);
+          ctx.strokeStyle = "#9ca3af";
+          ctx.strokeRect(el.x, el.y, el.width, el.height);
+        }
         ctx.globalAlpha = 1;
       }
 
@@ -905,6 +942,41 @@ const DesignStudio = ({ initialData }) => {
     }
   };
 
+  // Add image from file (File) at optional position
+  const addImageFromFile = (file, pos) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const src = evt.target.result;
+      const img = new Image();
+      img.onload = () => {
+        imageCacheRef.current.set(src, img);
+        const maxSide = 400;
+        const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const w = Math.round(img.width * ratio) || 200;
+        const h = Math.round(img.height * ratio) || 200;
+        const newEl = {
+          id: Date.now() + Math.random(),
+          type: "image",
+          name: "Image",
+          x: pos?.x ?? 100,
+          y: pos?.y ?? 100,
+          width: w,
+          height: h,
+          src,
+          opacity: 1,
+          fill: "#ffffff",
+          padding: { top: 0, right: 0, bottom: 0, left: 0 },
+          margin: { top: 0, right: 0, bottom: 0, left: 0 },
+        };
+        setElements((prev) => [...prev, newEl]);
+        setAssetsVersion((v) => v + 1);
+      };
+      img.src = src;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const addComment = () => {
     if (!commentText.trim() || !newCommentPos) return;
 
@@ -1218,6 +1290,23 @@ const DesignStudio = ({ initialData }) => {
               className="hidden"
             />
           </label>
+          <label
+            className="p-2 rounded hover:bg-gray-100 cursor-pointer"
+            title="Add Image"
+          >
+            <ImageIcon size={18} />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) addImageFromFile(file);
+                // reset input so same file can be picked again
+                e.target.value = "";
+              }}
+              className="hidden"
+            />
+          </label>
           <button
             onClick={exportDesign}
             className="p-2 rounded hover:bg-gray-100"
@@ -1433,6 +1522,25 @@ const DesignStudio = ({ initialData }) => {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
+            onDragOver={(e) => {
+              e.preventDefault();
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              const files = Array.from(e.dataTransfer.files || []);
+              if (!files.length) return;
+              const pos = getMousePos(e);
+              let offset = 0;
+              files.forEach((file) => {
+                if (file.type.startsWith("image/")) {
+                  addImageFromFile(file, {
+                    x: pos.x + offset,
+                    y: pos.y + offset,
+                  });
+                  offset += 20;
+                }
+              });
+            }}
             className="absolute inset-0 cursor-crosshair"
             style={{
               cursor: isAddingComment
@@ -1540,6 +1648,43 @@ const DesignStudio = ({ initialData }) => {
                             {comment.text}
                           </p>
                         </div>
+
+                        {/* Image */}
+                        {selectedElement.type === "image" && (
+                          <div className="border-t pt-3">
+                            <h3 className="text-xs font-semibold text-gray-700 mb-2">
+                              Image
+                            </h3>
+                            <div className="space-y-2">
+                              <div>
+                                <label className="text-xs text-gray-600 block mb-1">
+                                  Replace Image
+                                </label>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    const reader = new FileReader();
+                                    reader.onload = (evt) => {
+                                      const src = evt.target.result;
+                                      imageCacheRef.current.delete(
+                                        selectedElement.src
+                                      );
+                                      imageCacheRef.current.set(src, null);
+                                      updateSelectedElement(() => ({ src }));
+                                      setAssetsVersion((v) => v + 1);
+                                    };
+                                    reader.readAsDataURL(file);
+                                    e.target.value = "";
+                                  }}
+                                  className="w-full text-sm"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 

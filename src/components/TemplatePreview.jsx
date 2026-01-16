@@ -61,6 +61,20 @@ const TemplatePreview = ({ data, width = 600, height = 340 }) => {
             </div>
           );
         }
+        if (el.type === "image") {
+          return (
+            <img
+              key={el.id}
+              src={el.src}
+              alt={el.name || "Image"}
+              style={{
+                ...style,
+                border: "none",
+                objectFit: "cover",
+              }}
+            />
+          );
+        }
         return null;
       })}
     </div>
