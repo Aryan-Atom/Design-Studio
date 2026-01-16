@@ -37,12 +37,12 @@ const Portfolio = () => {
                 >
                   View
                 </button>
-                <button
+                {/* <button
                   onClick={() => navigate(`/configure/${t.slug}`)}
                   className="px-3 py-1.5 rounded-full bg-slate-800 text-white hover:bg-slate-900"
                 >
                   Configure
-                </button>
+                </button> */}
                 <button
                   onClick={() =>
                     navigate("/studio/new", { state: { initialData: t.json } })

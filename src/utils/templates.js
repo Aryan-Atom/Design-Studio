@@ -47,7 +47,7 @@ export const templates = [
           y: 55,
           width: 200,
           height: 30,
-          text: "YourBrand",
+          text: "ELM",
           fontSize: 26,
           textColor: "#111827",
           opacity: 1,
