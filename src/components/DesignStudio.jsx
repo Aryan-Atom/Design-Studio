@@ -859,6 +859,35 @@ const DesignStudio = ({ initialData }) => {
     a.click();
   };
 
+  // Helper to update currently selected element (supports children in groups)
+  const updateSelectedElement = (mutate) => {
+    if (selectedIds.length !== 1) return;
+    const targetId = selectedIds[0];
+    const found = findElementById(elements, targetId);
+    if (!found || !found.el) return;
+
+    if (!found.parent) {
+      setElements(
+        elements.map((el) =>
+          el.id === targetId ? { ...el, ...mutate(el) } : el
+        )
+      );
+    } else {
+      setElements(
+        elements.map((el) =>
+          el.id === found.parent.id
+            ? {
+                ...el,
+                children: el.children.map((c) =>
+                  c.id === targetId ? { ...c, ...mutate(c) } : c
+                ),
+              }
+            : el
+        )
+      );
+    }
+  };
+
   const importDesign = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -1865,6 +1894,63 @@ const DesignStudio = ({ initialData }) => {
                   </div>
                 </div>
               </div>
+
+              {/* Text */}
+              {selectedElement.type === "text" && (
+                <div className="border-t pt-3">
+                  <h3 className="text-xs font-semibold text-gray-700 mb-2">
+                    Text
+                  </h3>
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-xs text-gray-600 block mb-1">
+                        Content
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedElement.text || ""}
+                        onChange={(e) =>
+                          updateSelectedElement(() => ({
+                            text: e.target.value,
+                          }))
+                        }
+                        className="w-full px-2 py-1 text-sm border rounded"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600 block mb-1">
+                        Font Size
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={selectedElement.fontSize || 16}
+                        onChange={(e) =>
+                          updateSelectedElement(() => ({
+                            fontSize: parseInt(e.target.value) || 16,
+                          }))
+                        }
+                        className="w-full px-2 py-1 text-sm border rounded"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600 block mb-1">
+                        Text Color
+                      </label>
+                      <input
+                        type="color"
+                        value={selectedElement.textColor || "#000000"}
+                        onChange={(e) =>
+                          updateSelectedElement(() => ({
+                            textColor: e.target.value,
+                          }))
+                        }
+                        className="w-full h-8 rounded cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Border */}
               {selectedElement.type !== "text" && (
